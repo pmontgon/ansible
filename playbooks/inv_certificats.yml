@@ -1,0 +1,39 @@
+---
+  - hosts: all
+    vars:
+      env_todo: "{{env}}"
+      file_out: "./inv_file.txt"
+      script_inv: "inv_certificats.sh"
+      script_inv_dir_src: "../scritps"
+      script_inv_dir_remote: "~"
+
+    tasks:
+      - name: "copy script on remote server"
+        copy: src={{script_inv_dir_src}}/{{script_inv}} dest={{script_inv_dir_remote}} mode=0700
+
+      - name: "find certificat file"
+        shell: "{{script_inv_dir_remote}}/{{script_inv}} \"/home-*\""
+        register: result_find
+
+      - name: "retrieve date"
+        ignore_errors: yes
+        shell: echo $(date --date="$(openssl x509 -enddate -noout -in {{item}}|cut -d= -f2)" --iso-8601 && \
+              openssl x509 -noout -subject -in {{item}} | cut -d"/" -f5)
+        with_items: "{{result_find.stdout_lines}}"
+        register: result_test_ssl
+
+      - name: "delete existing out file"
+        file: dest="{{file_out}}" state=absent
+        delegate_to: localhost
+
+      - name: "create out file"
+        file: dest="{{file_out}}" state=touch
+        delegate_to: localhost
+
+      - name: "insert result into out file"
+        lineinfile:
+          dest: "{{file_out}}"
+          line: "{{env_todo}} {{inventory_hostname}} {{item.item}} {{item.stdout}}"
+          insertafter: EOF
+        delegate_to: localhost
+        with_items: "{{result_test_ssl.results}}"
