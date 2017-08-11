@@ -1,0 +1,28 @@
+- name: "Determine la derniere version disponible"
+  local_action: shell find {{repository}}/jdk -name "jdk-*.tgz" | awk -F"/" '{print $NF}' | sed 's/.tgz//g' | awk -F"-" '{print $2}' | sort -u | tail -1
+  register: last_version_jdk
+
+- name: "Determine la version jdk a installer"
+  set_fact: jdk_current_version={{jdk_version | default(last_version_jdk.stdout)}}
+
+- name: "Recupere le nom de fichier du binaire"
+  set_fact: file_binaire_jdk_repository="{{repository}}/jdk/jdk-{{jdk_current_version}}.tgz"
+
+- name: "Teste la presence archive jdk-{{jdk_current_version}} dans repository local"
+  local_action: stat path="{{file_binaire_jdk_repository}}"
+  register: result_file_binaire_jdk_repository
+
+- fail: msg="Binaire non trouve"
+  when: result_file_binaire_jdk_repository.stat.exists == false
+
+- name: "Teste presence du repertoire"
+  stat: path={{jdk_bin_dir}}/jdk-{{jdk_current_version}}
+  register: result_jdk_home
+
+- name: "Tester presence installation versin jdk-{{jdk_current_version}} sur {{ansible_hostname}}"
+  stat: path="{{jdk_bin_dir}}/jdk-{{jdk_current_version}}/bin/startup.sh"
+  register: result_if_empty_jdk_home
+
+- name: "Installation du binaire {{jdk_current_version}} sur {{ansible_hostname}}"
+  unarchive: src={{file_binaire_jdk_repository}} dest={{jdk_bin_dir}}/ owner={{utilisateur}} group={{groupe}} mode=0750
+  when: result_jdk_home.stat.exists==false or result_if_empty_jdk_home.stat.exists==false

@@ -1,0 +1,5 @@
+---
+# defaults file for jdk
+
+groupe: centos
+utilisateur: centos

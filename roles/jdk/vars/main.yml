@@ -1,0 +1,4 @@
+---
+# vars file for jdk
+
+jdk_bin_dir: /opt/java

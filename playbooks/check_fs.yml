@@ -1,0 +1,8 @@
+---
+- hosts: all
+  vars:
+    fs2check: "{{fs}}"
+    size_max: "{{size}}"
+
+  roles:
+    - { role: ../roles/checkFS, when: fs2check is defined and size_max>0}

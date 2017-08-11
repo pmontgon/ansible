@@ -1,0 +1,2 @@
+[web]
+centoswm ansible_user=centos

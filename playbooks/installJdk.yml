@@ -1,0 +1,10 @@
+---
+- hosts: "{{cible}}"
+ 
+  vars:
+    repository: "../repository"
+    init_install: "true"
+    jdk_install: "false"
+
+  roles:
+    - { role: ../roles/jdk, when: jdk_install == "true" }

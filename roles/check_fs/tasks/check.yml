@@ -1,0 +1,36 @@
+---
+  - name: "recuperation de la taille"
+    set_fact:
+      taille="{{item.size.total}}"
+      taille_dispo="{{item.size_available}}"
+      to_do="OK"
+    with_items: "{{ansible_mounts}}"
+    when: item.mount==fs2check and {{(item.size_total|int)}}<(size_max|int)
+
+  - set_fact: pourcent={{(taille_dispo|int/taille|int*100)|round(1)}}
+    when: to_do is defined
+
+  - name: "recuperation de la date du jour"
+    command: date +%Y%m%d
+    register: timestamp
+    when: to_do is defined
+
+  - name: "creation du fichier de sortie"
+    file:
+      dest: "./checkFS_todo.{{timestamp.stdout}}"
+      state: touch
+    delegate_to: localhost
+    when: to_do is defined
+
+  - name: "export du resultat"
+    shell: echo "{{ansible_hostname}} {{fs2check}} {{taille|int|filesizeformat(true)}} {{pourcent}}%"
+    register: result_fs
+    when: to_do is defined
+
+  - name: "augmentation de fs demande pour {{ansible_hostname}}"
+    lineinfile:
+      dest: "./checkFS_todo.{{timestamp.stdout}}"
+      line: "{{result_fs.stdout}}"
+      insertafter: EOF
+    delegate_to: localhost
+    when: to_do is defined

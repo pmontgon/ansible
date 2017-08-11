@@ -1,0 +1,3 @@
+server:
+  os: "macosx"
+  apache: "2.2"

@@ -1,0 +1,12 @@
+---
+# tasks file for check_fs
+
+  - name: "Recuperation de la taille"
+    set_fact: taille="{{item.size_total}}" taille_dispo="{{item.size_available}}"
+    with_items: "{{ansible_mounts}}"
+    when: item.mount==mon_fs and item.size_total<size_max
+    
+  - set_fact: pourcent={{(taille_dispo|int/taille|int)}}
+
+  - name: "Augmentation de fs demande pour {{ansible_hostname}}"
+    local_action:  command echo "{{ansible_hostname}} {{mon_fs}} {{taille_dispo}} {{pourcent}}"
